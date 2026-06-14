@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+    <g transform="translate(32, 25)">
+        <rect x="0" y="3" width="30" height="30" rx="3" fill="#E31E24"/>
+        <path d="M 8 18 L 14 11 L 22 25 Z" fill="white"/>
+        <text x="42" y="27" font-family="'Jost', sans-serif" font-weight="800" font-size="26" letter-spacing="1.5" fill="white">LLOYD</text>
+    </g>
+</svg>

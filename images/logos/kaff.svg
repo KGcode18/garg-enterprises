@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+    <g transform="translate(45, 15)">
+        <rect x="0" y="0" width="110" height="50" fill="#E31837"/>
+        <text x="55" y="36" font-family="'Arial', sans-serif" font-weight="bold" font-size="28" letter-spacing="2" fill="white" text-anchor="middle">KAFF</text>
+    </g>
+</svg>
