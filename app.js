@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
                 dot.addEventListener('click', () => {
                     if (isTransitioning) return;
-                    isTransitioning = true;
+                    beginTransition();
                     carouselIndex = i + 2;
                     setTrackPosition();
                     updateActiveClasses();
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextArrow = container.querySelector('.next-arrow');
         if (prevArrow) prevArrow.addEventListener('click', () => {
             if (isTransitioning) return;
-            isTransitioning = true;
+            beginTransition();
             carouselIndex--;
             setTrackPosition();
             updateActiveClasses();
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (nextArrow) nextArrow.addEventListener('click', () => {
             if (isTransitioning) return;
-            isTransitioning = true;
+            beginTransition();
             carouselIndex++;
             setTrackPosition();
             updateActiveClasses();
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     openLightbox(activeIndex);
                 } else {
                     if (isTransitioning) return;
-                    isTransitioning = true;
+                    beginTransition();
                     carouselIndex = clickedIndex;
                     setTrackPosition();
                     updateActiveClasses();
@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(autoplayTimer);
             autoplayTimer = setInterval(() => {
                 if (isDragging || isTransitioning) return;
-                isTransitioning = true;
+                beginTransition();
                 carouselIndex++;
                 setTrackPosition();
                 updateActiveClasses();
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if      (dragOffset < -threshold || (isFastSwipe && dragOffset < 0)) carouselIndex++;
             else if (dragOffset >  threshold || (isFastSwipe && dragOffset > 0)) carouselIndex--;
 
-            isTransitioning = true;
+            beginTransition();
             setTrackPosition();
             updateActiveClasses();
             resetAutoplay();
@@ -432,9 +432,10 @@ document.addEventListener('DOMContentLoaded', () => {
         track.addEventListener('touchmove',  handleDragMove,  { passive: true });
         track.addEventListener('touchend',   handleDragEnd);
 
-        // ── Infinite loop wrap ──
-        track.addEventListener('transitionend', e => {
-            if (e.propertyName !== 'transform') return;
+        // ── Safe transition unlock ──
+        let transitionSafetyTimer = null;
+        const unlockTransition = () => {
+            clearTimeout(transitionSafetyTimer);
             isTransitioning = false;
             if (carouselIndex >= slideCount + 2) {
                 track.classList.add('dragging');
@@ -450,13 +451,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 track.classList.remove('dragging');
             }
             updateActiveClasses();
+        };
+
+        // Listen on track only (not bubbled from child slides)
+        track.addEventListener('transitionend', e => {
+            if (e.target !== track || e.propertyName !== 'transform') return;
+            unlockTransition();
         });
+
+        // Wrapper to set isTransitioning with a safety fallback
+        const beginTransition = () => {
+            isTransitioning = true;
+            clearTimeout(transitionSafetyTimer);
+            transitionSafetyTimer = setTimeout(unlockTransition, 500);
+        };
 
         // ── Init ──
         setupDots();
         updateActiveClasses();
         setTrackPosition();
-        startAutoplay();
+
+        // Start autoplay only when the section is visible in the viewport
+        const gallerySection = container.closest('section') || container;
+        const visibilityObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    startAutoplay();
+                } else {
+                    clearInterval(autoplayTimer);
+                    clearTimeout(inactivityTimeout);
+                }
+            });
+        }, { threshold: 0.2 });
+        visibilityObserver.observe(gallerySection);
 
         window.addEventListener('resize', () => {
             clearTimeout(window._carouselResizeTimer);
